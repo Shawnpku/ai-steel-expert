@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from langchain_openai import ChatOpenAI
 from langchain_experimental.agents import create_pandas_dataframe_agent
-from langchain.agents.agent_types import AgentType
 import os
 
 # ==========================================
@@ -81,7 +80,7 @@ def get_agent(api_key):
         llm,
         [df_comp, df_prop],
         verbose=True,
-        agent_type=AgentType.OPENAI_FUNCTIONS,
+        agent_type="openai-functions",
         allow_dangerous_code=True,
         prefix=PREFIX_PROMPT,
         handle_parsing_errors=True
