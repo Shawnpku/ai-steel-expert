@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from langchain_openai import ChatOpenAI
 from langchain_experimental.agents import create_pandas_dataframe_agent
+from langchain_community.callbacks import StreamlitCallbackHandler
 import os
 
 # ==========================================
@@ -117,6 +118,20 @@ def create_agent(api_key, df1, df2):
     1. 用户查牌号时，优先通过 'Grade' 列关联 df1 和 df2。
     2. 必须严格基于 Python 工具运行返回的数据回答。
     3. 如果数据中包含范围（如 5.5~6.5），请完整展示。
+
+    【⭐⭐ 核心搜索法则 (必须严格遵守，覆盖默认行为) ⭐⭐】
+    为了防止漏查，当用户查询某个牌号（如 TC4, SP700）时，你必须遵守以下逻辑：
+
+    1. 🚫 **绝对禁止** 使用 `df['Grade'].unique()`、`.values` 或 `.head()` 来肉眼寻找牌号。
+    2. 🚫 **绝对禁止** 在代码中对搜索结果进行切片（例如 `[:20]` 或 `head(5)`）。即使数据量大，也必须让 Pandas 完整返回，不要担心 Token 消耗。
+    3. ✅ **必须** 直接运行全量模糊搜索代码。
+       - 标准代码范例：`df1[df1['Grade'].str.contains('SP700', case=False, na=False)]`
+    4. 🔄 **自动重试机制**：
+       - 如果第一次搜索 `df1` 返回 Empty，不要立刻说找不到。
+       - 必须紧接着搜索 `df2`。
+       - 必须尝试变体搜索（例如用户搜 'Ti64' 没搜到，尝试搜 'Ti-64' 或 'Ti 64'）。
+    
+    只有当所有模糊匹配的代码运行结果都为空时，才能回复“未找到”。
     """
     return create_pandas_dataframe_agent(
         llm,
@@ -162,7 +177,7 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
 
 # 处理用户输入
-if prompt := st.chat_input("请输入您的问题 (例如: 帮我找强度大于1000的牌号)"):
+if prompt := st.chat_input("请输入您的问题 (例如: 帮我找适合制造高尔夫球头的钛合金牌号)"):
     # 1. 显示用户问题
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -170,22 +185,25 @@ if prompt := st.chat_input("请输入您的问题 (例如: 帮我找强度大于
 
     # 2. 生成回答
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        message_placeholder.markdown("🤖 正在思考并查询数据库...")
+        # 创建一个空的容器，用于放置“思考过程”
+        st_callback = StreamlitCallbackHandler(st.container())
         
         try:
             if not agent:
                 response = "❌ 请先在侧边栏输入有效的 API Key。"
             else:
-                # 调用 LangChain Agent
-                result = agent.invoke({"input": prompt})
+                # 关键修改：传入 callbacks
+                # 这样 Agent 的每一步动作都会实时打印在屏幕上
+                result = agent.invoke(
+                    {"input": prompt},
+                    config={"callbacks": [st_callback]}
+                )
+                
                 response = result["output"]
-            
-            message_placeholder.markdown(response)
-            
-            # 3. 保存回答到历史
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            
+                st.markdown(response)
+                
+                # 3. 保存回答到历史
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                
         except Exception as e:
-            error_msg = f"⚠️ 发生错误: {str(e)}"
-            message_placeholder.error(error_msg)
+            st.error(f"⚠️ 发生错误: {str(e)}")

@@ -21,10 +21,10 @@ def clean_titanium_data():
     # 3. 映射表：将日标/美标映射回国标 (解决 TC4 vs Ti-6Al-4V 问题)
     grade_map = {
         'Ti-6Al-4V': 'TC4',
-        'TP270': 'TA1',
-        'TP340': 'TA2',
-        'TP480': 'TA3',
-        'TP550': 'TA4',
+        # 'TP270': 'TA1',
+        # 'TP340': 'TA2',
+        # 'TP480': 'TA3',
+        # 'TP550': 'TA4',
         'Ti-3Al-2.5V': 'TA18',
         'Ti-4Al-22V': 'TC18' # 常见对应，视具体情况而定
     }
