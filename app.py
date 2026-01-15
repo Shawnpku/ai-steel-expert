@@ -13,15 +13,19 @@ st.set_page_config(page_title="钛合金专家系统 AI", page_icon="⚙️", la
 st.title("⚙️ 钛合金/特种金属 AI 专家系统")
 st.markdown("### 基于 DeepSeek-V3 与 天元新材数据库")
 
+# 尝试从 secrets 获取 Key
+# 如果本地没有配置 secrets，就默认留空
+default_key = st.secrets.get("DEEPSEEK_API_KEY", "")
+
 # ==========================================
 # 2. 数据加载 (使用 session_state 持久化)
 # ==========================================
 @st.cache_data
 def load_data():
     """加载 CSV 数据，使用 cache_data 确保数据一致性"""
-    if os.path.exists("titanium_composition_cleaned.csv") and os.path.exists("titanium_properties_cleaned.csv"):
-        df1 = pd.read_csv("titanium_composition_cleaned.csv")
-        df2 = pd.read_csv("titanium_properties_cleaned.csv")
+    if os.path.exists("titanium_composition.csv") and os.path.exists("titanium_properties.csv"):
+        df1 = pd.read_csv("titanium_composition.csv")
+        df2 = pd.read_csv("titanium_properties.csv")
         return df1, df2
     return None, None
 
@@ -43,7 +47,7 @@ with st.sidebar:
     st.header("🔧 系统配置")
 
     # 让这个程序变得通用：用户可以自己填 Key，也可以用默认的
-    user_api_key = st.text_input("输入 DeepSeek API Key", value="sk-664268bc084c4a3fbd19fbb9efc924da", type="password")
+    user_api_key = st.text_input("输入 DeepSeek API Key", value=default_key, type="password")
 
     st.divider()
 
