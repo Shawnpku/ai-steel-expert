@@ -18,9 +18,9 @@ st.markdown("### 基于 DeepSeek-V3 与 天元新材数据库")
 @st.cache_data
 def load_data():
     """加载 CSV 数据，使用 cache_data 确保数据一致性"""
-    if os.path.exists("titanium_composition.csv") and os.path.exists("titanium_properties.csv"):
-        df1 = pd.read_csv("titanium_composition.csv")
-        df2 = pd.read_csv("titanium_properties.csv")
+    if os.path.exists("titanium_composition_cleaned.csv") and os.path.exists("titanium_properties_cleaned.csv"):
+        df1 = pd.read_csv("titanium_composition_cleaned.csv")
+        df2 = pd.read_csv("titanium_properties_cleaned.csv")
         return df1, df2
     return None, None
 
@@ -61,13 +61,13 @@ with st.sidebar:
 
     st.divider()
     st.write("🕵️‍♂️ 数据透视自检:")
-    # 模糊搜索 SP700
-    check = df_comp[df_comp['Grade'].str.contains("SP700", case=False, na=False)]
+    # 模糊搜索 TC4
+    check = df_comp[df_comp['Grade'].str.contains("TC4", case=False, na=False)]
     if not check.empty:
-        st.success(f"✅ 内存中存在 SP700 数据！(共{len(check)}条)")
+        st.success(f"✅ 内存中存在 TC4 数据！(共{len(check)}条)")
         st.dataframe(check)
     else:
-        st.error("❌ 严重警告：内存中的 DataFrame 里真的没有 SP700！")
+        st.error("❌ 严重警告：内存中的 DataFrame 里真的没有 TC4！")
 
     if st.button("🗑️ 清空对话历史"):
         st.session_state.messages = []
@@ -121,7 +121,7 @@ def create_agent(api_key, df1, df2):
     return create_pandas_dataframe_agent(
         llm,
         [df1, df2],
-        verbose=True,
+        verbose=False,
         allow_dangerous_code=True,
         agent_type="openai-tools",  # <--- 核心修改：改为 tools 模式
         prefix=PREFIX_PROMPT,
